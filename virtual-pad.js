@@ -1,16 +1,14 @@
 // Module: Virtual Pad (Glassmorphism + Responsivo)
-// Versão final com ajustes de layout e remoção do botão pause duplicado.
-// Corrigido: START pula tutorial durante o tutorial e pausa depois.
+// Versão final com ajustes de opacidade e dimensionamento.
 
 (function() {
-    // Remove qualquer pad antigo que possa existir
+    // Remove qualquer pad antigo
     const oldPad = document.getElementById('virtual-pad');
     if (oldPad) oldPad.remove();
 
     // ========== ESTILOS ==========
     const style = document.createElement('style');
     style.textContent = `
-        /* Container principal do pad – visível apenas em telas pequenas */
         #virtual-pad {
             display: none;
             touch-action: manipulation;
@@ -20,12 +18,12 @@
             box-sizing: border-box;
         }
 
-        /* Efeito glass base – mais translúcido */
+        /* Efeito glass com opacidade um pouco maior para ficar visível */
         .glass {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
             color: rgba(255, 255, 255, 0.9);
             transition: all 0.1s ease;
@@ -38,8 +36,8 @@
 
         .glass:active {
             transform: scale(0.92);
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
         }
 
         /* D-Pad */
@@ -50,13 +48,13 @@
             gap: 6px;
             width: 140px;
             height: 140px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 20px;
             padding: 8px;
             backdrop-filter: blur(4px);
         }
         .dpad-cell {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 4px 0 #1a1a1a;
             color: #ffd966;
@@ -82,7 +80,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 40px;
             padding: 20px 15px;
             backdrop-filter: blur(4px);
@@ -96,8 +94,8 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 6px 0 #111, 0 8px 12px rgba(0,0,0,0.6);
             font-size: 24px;
             font-family: 'Arial Black', sans-serif;
@@ -107,20 +105,20 @@
         .action-btn:active {
             transform: translateY(6px);
             box-shadow: 0 2px 0 #111, 0 4px 8px rgba(0,0,0,0.6);
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
         }
-        .action-btn.a { background: rgba(46, 204, 113, 0.3); }
-        .action-btn.b { background: rgba(231, 76, 60, 0.3); }
-        .action-btn.y { background: rgba(241, 196, 15, 0.3); color: #222; }
+        .action-btn.a { background: rgba(46, 204, 113, 0.4); }
+        .action-btn.b { background: rgba(231, 76, 60, 0.4); }
+        .action-btn.y { background: rgba(241, 196, 15, 0.4); color: #222; }
 
-        /* Botões centrais (start/select) */
+        /* Botões centrais */
         .center-btn {
             width: 80px;
             height: 50px;
             border-radius: 30px;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             font-size: 16px;
             font-weight: bold;
@@ -132,10 +130,10 @@
         }
         .center-btn:active {
             transform: scale(0.9);
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Layout para portrait (celular em pé) – tudo abaixo do canvas com quebra de linha se necessário */
+        /* Portrait */
         @media (max-width: 800px) and (orientation: portrait) {
             body {
                 justify-content: flex-start !important;
@@ -155,20 +153,17 @@
             .center-buttons {
                 display: flex;
                 gap: 15px;
-                order: 2; /* Coloca os centrais abaixo dos outros */
+                order: 2;
                 width: 100%;
                 justify-content: center;
                 margin-top: 5px;
             }
-            .left-area {
-                order: 1;
-            }
-            .right-area {
+            .left-area, .right-area {
                 order: 1;
             }
         }
 
-        /* Layout para landscape (celular deitado) – botões laterais e centrais sobre o canvas */
+        /* Landscape */
         @media (max-width: 800px) and (orientation: landscape) {
             body {
                 flex-direction: row !important;
@@ -186,9 +181,10 @@
                 align-items: center;
             }
             canvas {
+                max-width: 100%;
                 max-height: 100vh;
                 width: auto;
-                max-width: 100%;
+                height: auto;
             }
             #virtual-pad {
                 display: flex;
@@ -219,7 +215,6 @@
             }
         }
 
-        /* Ajustes para telas muito pequenas */
         @media (max-width: 600px) {
             .dpad { width: 120px; height: 120px; }
             .action-btn { width: 50px; height: 50px; font-size: 20px; }
@@ -229,7 +224,6 @@
     document.head.appendChild(style);
 
     // ========== CRIAÇÃO DOS ELEMENTOS ==========
-
     const pad = document.createElement('div');
     pad.id = 'virtual-pad';
 
@@ -253,7 +247,6 @@
             if (symbol) {
                 cell.textContent = symbol;
                 const key = keyMap[symbol];
-                // Eventos de toque e mouse
                 const pressHandler = (e) => {
                     e.preventDefault();
                     keys[key] = true;
@@ -275,14 +268,13 @@
     });
     leftArea.appendChild(dpad);
 
-    // Área direita (botões de ação) – sem pause
+    // Área direita (botões de ação)
     const rightArea = document.createElement('div');
     rightArea.className = 'right-area';
 
     const actionContainer = document.createElement('div');
     actionContainer.className = 'action-buttons';
 
-    // Linha 1: A e B
     const row1 = document.createElement('div');
     row1.className = 'action-row';
     const btnA = document.createElement('div');
@@ -296,7 +288,6 @@
     row1.appendChild(btnA);
     row1.appendChild(btnB);
 
-    // Linha 2: Y
     const row2 = document.createElement('div');
     row2.className = 'action-row';
     const btnY = document.createElement('div');
@@ -309,7 +300,7 @@
     actionContainer.appendChild(row2);
     rightArea.appendChild(actionContainer);
 
-    // Botões centrais (start, select) – sem pause
+    // Botões centrais
     const centerButtons = document.createElement('div');
     centerButtons.className = 'center-buttons';
 
@@ -326,12 +317,11 @@
     centerButtons.appendChild(btnStart);
     centerButtons.appendChild(btnSelect);
 
-    // Monta o pad
     pad.appendChild(leftArea);
     pad.appendChild(centerButtons);
     pad.appendChild(rightArea);
 
-    // Insere o pad no DOM após o game-container
+    // Insere o pad após o game-container
     const gameContainer = document.getElementById('game-container');
     if (gameContainer) {
         gameContainer.parentNode.insertBefore(pad, gameContainer.nextSibling);
@@ -339,7 +329,7 @@
         document.body.appendChild(pad);
     }
 
-    // Adiciona eventos aos botões de ação
+    // Mapeamento de ações
     const actionMap = {
         'attack': playerAttack,
         'dash': playerDash,
@@ -348,16 +338,15 @@
             e.preventDefault();
             window.inputType.set('mobile');
             if (currentState === GameState.MENU) {
-                playerStart(); // inicia o jogo
+                playerStart();
             } else if (currentState === GameState.PLAYING) {
-                // Se o tutorial estiver ativo, pula; senão, pausa
                 if (window.tutorial && window.tutorial.isActive()) {
-                    playerStart(); // isso vai pular o tutorial
+                    playerStart(); // pula tutorial
                 } else {
                     playerPause();
                 }
             } else if (currentState === GameState.PAUSED) {
-                playerPause(); // despausa
+                playerPause();
             }
         },
         'menu': playerMenu
@@ -369,7 +358,7 @@
             const handler = (e) => {
                 e.preventDefault();
                 window.inputType.set('mobile');
-                actionMap[action]();
+                actionMap[action](e);
             };
             el.addEventListener('touchstart', handler);
             el.addEventListener('mousedown', handler);
