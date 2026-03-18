@@ -1,9 +1,10 @@
 // Module: Virtual Pad (Glassmorphism + Responsivo)
-// Versão corrigida: botões funcionais, efeito glass, layout adaptativo.
+// Cria o controle virtual completamente via JS, sem necessidade de HTML.
 
 (function() {
-    // Evita recriar se já existir
-    if (document.getElementById('virtual-pad')) return;
+    // Remove qualquer pad antigo que possa existir (caso o HTML ainda tenha resquícios)
+    const oldPad = document.getElementById('virtual-pad');
+    if (oldPad) oldPad.remove();
 
     // ========== ESTILOS ==========
     const style = document.createElement('style');
@@ -357,6 +358,4 @@
     };
 
     pad.querySelectorAll('[data-action]').forEach(addEvents);
-
-    // Força a atualização do tipo de entrada quando o pad for usado (já feito nos eventos)
 })();
