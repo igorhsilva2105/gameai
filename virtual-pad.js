@@ -1,382 +1,470 @@
-// Module: Virtual Pad (Glassmorphism style) – Criado dinamicamente
+// Module: Virtual Pad (Glassmorphism + Responsivo)
+// Cria dinamicamente um controle virtual com layout adaptativo.
 
 (function() {
     // Evita recriar se já existir
     if (document.getElementById('virtual-pad')) return;
 
-    // Cria o container principal
-    const pad = document.createElement('div');
-    pad.id = 'virtual-pad';
-    pad.className = 'virtual-pad glass-pad';
-
     // ========== ESTILOS ==========
     const style = document.createElement('style');
     style.textContent = `
-        .glass-pad {
-            display: none;
+        /* Container principal do pad */
+        #virtual-pad {
+            position: relative;
             width: 100%;
-            max-width: 600px;
-            justify-content: space-between;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            margin-top: 10px;
-            gap: 20px;
+            justify-content: center;
             touch-action: manipulation;
+            user-select: none;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: rgba(255, 255, 255, 0.8);
+            pointer-events: none; /* Para que cliques no canvas passem, mas os botões próprios têm pointer-events auto */
+            z-index: 20;
         }
 
-        /* Glassmorphism base */
+        /* Em landscape, o pad fica sobreposto ao canvas */
+        @media (orientation: landscape) {
+            #virtual-pad {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 10px;
+                box-sizing: border-box;
+                pointer-events: none;
+            }
+            #virtual-pad > * {
+                pointer-events: auto;
+            }
+            .canvas-area {
+                position: relative;
+                width: 400px; /* mesmo tamanho do canvas */
+                height: 400px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .center-buttons {
+                position: absolute;
+                bottom: 20px;
+                left: 0;
+                right: 0;
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                pointer-events: auto;
+            }
+        }
+
+        /* Em portrait, tudo abaixo do canvas */
+        @media (orientation: portrait) {
+            #virtual-pad {
+                margin-top: 10px;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                pointer-events: auto;
+            }
+            .canvas-area {
+                display: none; /* não usado em portrait */
+            }
+            .bottom-row {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                width: 100%;
+                max-width: 600px;
+            }
+            .center-buttons {
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+            }
+        }
+
+        /* Efeito glass base */
         .glass {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            color: rgba(255, 255, 255, 0.9);
             transition: all 0.1s ease;
             cursor: pointer;
-            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
 
         .glass:active {
             transform: scale(0.92);
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
         }
 
-        /* D-Pad (direcionais) */
-        .dpad-container {
+        /* D-Pad */
+        .dpad {
             display: grid;
-            grid-template-rows: repeat(3, 1fr);
             grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
             gap: 6px;
             width: 140px;
             height: 140px;
-            background: rgba(30,30,30,0.8);
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 20px;
             padding: 8px;
-            box-shadow: 0 8px 0 #111, 0 10px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
         }
-
         .dpad-cell {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 4px 0 #1a1a1a;
+            color: #ffd966;
+            font-size: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 0 #1a1a1a;
-            color: #ffd966;
-            font-size: 28px;
-            font-weight: bold;
             cursor: pointer;
-            touch-action: manipulation;
             transition: all 0.05s;
-            backdrop-filter: blur(4px);
         }
-
         .dpad-cell:active {
             transform: translateY(4px);
             box-shadow: inset 0 -1px 0 #0a0a0a, 0 2px 0 #1a1a1a;
         }
-
         .dpad-cell.empty {
             background: transparent;
             box-shadow: none;
             pointer-events: none;
         }
 
-        /* Botões de ação (estilo glass) */
+        /* Botões de ação */
         .action-buttons {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: rgba(30,30,30,0.8);
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 40px;
             padding: 20px 15px;
-            box-shadow: 0 8px 0 #111, 0 10px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
         }
-
         .action-row {
             display: flex;
             gap: 20px;
             justify-content: center;
         }
-
         .action-btn {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 6px 0 #111, 0 8px 12px rgba(0,0,0,0.6);
-            color: white;
-            font-weight: bold;
             font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             font-family: 'Arial Black', sans-serif;
-            cursor: pointer;
-            touch-action: manipulation;
+            color: white;
             transition: all 0.05s;
         }
-
         .action-btn:active {
             transform: translateY(6px);
             box-shadow: 0 2px 0 #111, 0 4px 8px rgba(0,0,0,0.6);
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.25);
         }
-
-        .action-btn.a { background: rgba(46, 204, 113, 0.3); }
-        .action-btn.b { background: rgba(231, 76, 60, 0.3); }
-        .action-btn.y { background: rgba(241, 196, 15, 0.3); color: #222; }
-        .action-btn.start, .action-btn.select, .action-btn.pause { 
-            width: 70px; 
-            border-radius: 40px; 
-            background: rgba(85, 85, 85, 0.3); 
+        .action-btn.a { background: rgba(46, 204, 113, 0.4); }
+        .action-btn.b { background: rgba(231, 76, 60, 0.4); }
+        .action-btn.y { background: rgba(241, 196, 15, 0.4); color: #222; }
+        .action-btn.start, .action-btn.select, .action-btn.pause {
+            width: 70px;
+            height: 50px;
+            border-radius: 40px;
+            background: rgba(85, 85, 85, 0.4);
             font-size: 18px;
             box-shadow: 0 4px 0 #222;
         }
-        .action-btn.pause { background: rgba(52, 152, 219, 0.3); }
+        .action-btn.pause { background: rgba(52, 152, 219, 0.4); }
 
-        /* Touchpad decorativo (opcional) */
-        .touchpad-decor {
-            width: 100px;
+        /* Botões centrais (start/select) no landscape */
+        .center-btn {
+            width: 80px;
             height: 50px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(4px);
+            border-radius: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            opacity: 0.5;
-            margin: 0 10px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .center-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Joysticks decorativos */
-        .joystick-decor {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1);
-            position: relative;
-        }
-        .joystick-decor::after {
-            content: '';
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        @media (max-width: 800px) {
-            .glass-pad {
-                display: flex;
-            }
-        }
-        @media (max-width: 800px) and (orientation: portrait) {
-            .glass-pad {
-                flex-direction: row;
-                justify-content: space-around;
-                max-width: 100%;
-            }
-            .dpad-container {
-                width: 130px;
-                height: 130px;
-            }
-            .action-btn {
-                width: 55px;
-                height: 55px;
-                font-size: 22px;
-            }
-            .action-btn.start, .action-btn.select, .action-btn.pause {
-                width: 65px;
-                font-size: 16px;
-            }
-        }
-        @media (max-width: 800px) and (orientation: landscape) {
-            body {
-                flex-direction: row;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                padding: 5px;
-            }
-            .glass-pad {
-                flex-direction: row;
-                margin-top: 0;
-                width: auto;
-                max-width: none;
-            }
+        /* Ajustes para telas pequenas */
+        @media (max-width: 600px) {
+            .dpad { width: 120px; height: 120px; }
+            .action-btn { width: 50px; height: 50px; font-size: 20px; }
+            .action-btn.start, .action-btn.select, .action-btn.pause { width: 60px; height: 45px; font-size: 16px; }
+            .center-btn { width: 70px; height: 45px; font-size: 14px; }
         }
     `;
     document.head.appendChild(style);
 
-    // ========== ESTRUTURA DO PAD ==========
+    // ========== CRIAÇÃO DOS ELEMENTOS ==========
 
-    // Linha superior com touchpad decorativo e gatilhos (opcional, apenas visual)
-    const topRow = document.createElement('div');
-    topRow.style.display = 'flex';
-    topRow.style.justifyContent = 'space-between';
-    topRow.style.width = '100%';
-    topRow.style.marginBottom = '10px';
+    const pad = document.createElement('div');
+    pad.id = 'virtual-pad';
 
-    const leftTrigger = document.createElement('div');
-    leftTrigger.className = 'glass action-btn start';
-    leftTrigger.textContent = 'L1';
-    leftTrigger.style.width = '50px';
-    leftTrigger.style.height = '30px';
-    leftTrigger.style.borderRadius = '20px 20px 10px 10px';
-    leftTrigger.style.fontSize = '14px';
+    // Área esquerda (D-Pad)
+    const leftArea = document.createElement('div');
+    leftArea.className = 'left-area';
 
-    const touchpad = document.createElement('div');
-    touchpad.className = 'touchpad-decor';
-    touchpad.textContent = 'TOUCH';
-
-    const rightTrigger = document.createElement('div');
-    rightTrigger.className = 'glass action-btn start';
-    rightTrigger.textContent = 'R1';
-    rightTrigger.style.width = '50px';
-    rightTrigger.style.height = '30px';
-    rightTrigger.style.borderRadius = '20px 20px 10px 10px';
-    rightTrigger.style.fontSize = '14px';
-
-    topRow.appendChild(leftTrigger);
-    topRow.appendChild(touchpad);
-    topRow.appendChild(rightTrigger);
-    pad.appendChild(topRow);
-
-    // Linha principal: D-Pad e Botões de ação
-    const mainRow = document.createElement('div');
-    mainRow.style.display = 'flex';
-    mainRow.style.justifyContent = 'space-between';
-    mainRow.style.width = '100%';
-    mainRow.style.alignItems = 'center';
-
-    // D-Pad
     const dpad = document.createElement('div');
-    dpad.className = 'dpad-container';
+    dpad.className = 'dpad';
     const dpadLayout = [
         ['', '▲', ''],
         ['◀', '', '▶'],
         ['', '▼', '']
     ];
-    const keyMap = {
-        '▲': 'ArrowUp',
-        '▼': 'ArrowDown',
-        '◀': 'ArrowLeft',
-        '▶': 'ArrowRight'
-    };
+    const keyMap = { '▲': 'ArrowUp', '▼': 'ArrowDown', '◀': 'ArrowLeft', '▶': 'ArrowRight' };
+
     dpadLayout.forEach(row => {
         row.forEach(symbol => {
             const cell = document.createElement('div');
             cell.className = 'dpad-cell' + (symbol === '' ? ' empty' : '');
             if (symbol) {
                 cell.textContent = symbol;
-                cell.setAttribute('data-key', keyMap[symbol]);
-                // Eventos
                 const key = keyMap[symbol];
-                cell.addEventListener('touchstart', (e) => {
+                // Eventos de toque e mouse
+                const pressHandler = (e) => {
                     e.preventDefault();
                     keys[key] = true;
                     window.inputType.set('mobile');
-                });
-                cell.addEventListener('touchend', (e) => {
+                };
+                const releaseHandler = (e) => {
                     e.preventDefault();
                     delete keys[key];
-                });
-                cell.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    delete keys[key];
-                });
-                cell.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    keys[key] = true;
-                    window.inputType.set('mobile');
-                });
-                cell.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    delete keys[key];
-                });
-                cell.addEventListener('mouseleave', (e) => {
-                    // Se o mouse sair enquanto pressionado, solta a tecla
-                    delete keys[key];
-                });
+                };
+                cell.addEventListener('touchstart', pressHandler);
+                cell.addEventListener('touchend', releaseHandler);
+                cell.addEventListener('touchcancel', releaseHandler);
+                cell.addEventListener('mousedown', pressHandler);
+                cell.addEventListener('mouseup', releaseHandler);
+                cell.addEventListener('mouseleave', releaseHandler);
             }
             dpad.appendChild(cell);
         });
     });
+    leftArea.appendChild(dpad);
 
-    // Espaço para joystick decorativo (opcional)
-    const leftJoystick = document.createElement('div');
-    leftJoystick.className = 'joystick-decor';
+    // Área central (canvas area) - usada apenas em landscape
+    const canvasArea = document.createElement('div');
+    canvasArea.className = 'canvas-area';
 
-    // Botões de ação
+    // Botões centrais (start/select) - serão posicionados dentro da canvasArea em landscape, ou na bottom row em portrait
+    const centerButtons = document.createElement('div');
+    centerButtons.className = 'center-buttons';
+
+    const btnStart = document.createElement('div');
+    btnStart.className = 'center-btn';
+    btnStart.textContent = 'START';
+    btnStart.setAttribute('data-action', 'start');
+    const btnSelect = document.createElement('div');
+    btnSelect.className = 'center-btn';
+    btnSelect.textContent = 'SELECT';
+    btnSelect.setAttribute('data-action', 'menu');
+    const btnPause = document.createElement('div');
+    btnPause.className = 'center-btn';
+    btnPause.textContent = 'PAUSE';
+    btnPause.setAttribute('data-action', 'pause');
+
+    centerButtons.appendChild(btnStart);
+    centerButtons.appendChild(btnSelect);
+    centerButtons.appendChild(btnPause);
+    canvasArea.appendChild(centerButtons);
+
+    // Área direita (botões de ação)
+    const rightArea = document.createElement('div');
+    rightArea.className = 'right-area';
+
     const actionContainer = document.createElement('div');
     actionContainer.className = 'action-buttons';
 
+    // Linha 1: A e B
     const row1 = document.createElement('div');
     row1.className = 'action-row';
-    const btnAttack = document.createElement('div');
-    btnAttack.className = 'action-btn a';
-    btnAttack.textContent = 'A';
-    btnAttack.setAttribute('data-action', 'attack');
-    const btnDash = document.createElement('div');
-    btnDash.className = 'action-btn b';
-    btnDash.textContent = 'B';
-    btnDash.setAttribute('data-action', 'dash');
-    row1.appendChild(btnAttack);
-    row1.appendChild(btnDash);
+    const btnA = document.createElement('div');
+    btnA.className = 'action-btn a';
+    btnA.textContent = 'A';
+    btnA.setAttribute('data-action', 'attack');
+    const btnB = document.createElement('div');
+    btnB.className = 'action-btn b';
+    btnB.textContent = 'B';
+    btnB.setAttribute('data-action', 'dash');
+    row1.appendChild(btnA);
+    row1.appendChild(btnB);
 
+    // Linha 2: Y e Start (mas start já está no centro, então aqui talvez seja redundante; mas manteremos para portrait)
     const row2 = document.createElement('div');
     row2.className = 'action-row';
-    const btnRestart = document.createElement('div');
-    btnRestart.className = 'action-btn y';
-    btnRestart.textContent = 'Y';
-    btnRestart.setAttribute('data-action', 'restart');
-    const btnStart = document.createElement('div');
-    btnStart.className = 'action-btn start';
-    btnStart.textContent = 'Start';
-    btnStart.setAttribute('data-action', 'start');
-    row2.appendChild(btnRestart);
-    row2.appendChild(btnStart);
+    const btnY = document.createElement('div');
+    btnY.className = 'action-btn y';
+    btnY.textContent = 'Y';
+    btnY.setAttribute('data-action', 'restart');
+    // Em portrait, os botões centrais estarão na bottom row, então não precisamos duplicar start aqui.
+    // Vamos colocar apenas Y, e talvez um botão de pause? Mas pause já está nos centrais.
+    // Para manter consistência, colocaremos Y e um botão de "menu" (select) mas já temos select nos centrais.
+    // Vamos colocar Y e um botão de "pause" para ter mais opções? Melhor seguir o original: restart, start, menu, pause.
+    // Mas no original, os action buttons tinham restart (Y), start, menu (select), pause.
+    // Como start/select já estão nos centrais, podemos deixar apenas Y e talvez um botão de "pause" extra? Vamos manter apenas Y aqui.
+    row2.appendChild(btnY);
 
     const row3 = document.createElement('div');
     row3.className = 'action-row';
-    const btnMenu = document.createElement('div');
-    btnMenu.className = 'action-btn select';
-    btnMenu.textContent = 'Select';
-    btnMenu.setAttribute('data-action', 'menu');
-    const btnPause = document.createElement('div');
-    btnPause.className = 'action-btn pause';
-    btnPause.textContent = 'Pause';
-    btnPause.setAttribute('data-action', 'pause');
-    row3.appendChild(btnMenu);
-    row3.appendChild(btnPause);
+    // Adicionar botão de pause? Já temos no centro. Para não duplicar, deixamos vazio ou colocamos um extra.
+    // Para manter funcionalidade completa, adicionamos pause também aqui? Mas pause já está no centro. Vamos manter apenas Y e depois um botão de "pause" opcional?
+    // O usuário pediu que os botões de ação (A, B, Y, etc.) fiquem na direita. No original, havia restart (Y), start, select e pause. 
+    // Vamos colocar: A, B, Y, e um botão de "pause" na direita também, mas manteremos os centrais para start/select.
+    // Assim, na direita teremos A, B, Y e Pause. Em landscape, os centrais são sobrepostos.
+    const btnPauseRight = document.createElement('div');
+    btnPauseRight.className = 'action-btn pause';
+    btnPauseRight.textContent = '⏸';
+    btnPauseRight.setAttribute('data-action', 'pause');
+    row3.appendChild(btnPauseRight);
 
     actionContainer.appendChild(row1);
     actionContainer.appendChild(row2);
     actionContainer.appendChild(row3);
+    rightArea.appendChild(actionContainer);
 
-    // Joystick direito decorativo
-    const rightJoystick = document.createElement('div');
-    rightJoystick.className = 'joystick-decor';
+    // Linha inferior para portrait (agrupa left, centerButtons e right)
+    const bottomRow = document.createElement('div');
+    bottomRow.className = 'bottom-row';
+    // Em portrait, vamos mover os centerButtons para a bottomRow
+    // Precisamos clonar ou mover? Vamos criar uma cópia para portrait, mas para simplificar, vamos adicionar centerButtons também à bottomRow,
+    // e no landscape eles estão na canvasArea. Vamos usar CSS para mostrar/esconder conforme orientação.
+    // Mas os elementos não podem estar em dois lugares. A solução é ter duas estruturas diferentes? Ou usar CSS para reposicionar?
+    // Melhor: ter um único conjunto de centerButtons e, via media queries, alterar seu posicionamento.
+    // Vamos colocar centerButtons fora da canvasArea, e em landscape usamos position absolute sobre o canvas.
+    // Vamos ajustar o CSS: .center-buttons será posicionado absolutamente dentro de #virtual-pad quando landscape, e dentro da bottom-row quando portrait.
+    // Para isso, vamos criar centerButtons como filho direto de #virtual-pad, e usar CSS para posicionar.
+    // Refazendo: centerButtons será filho de #virtual-pad, e terá posicionamento diferente conforme orientação.
 
-    mainRow.appendChild(leftJoystick);
-    mainRow.appendChild(dpad);
-    mainRow.appendChild(actionContainer);
-    mainRow.appendChild(rightJoystick);
-    pad.appendChild(mainRow);
+    // Remove canvasArea, pois não será necessário. Em vez disso, usaremos o próprio canvas como referência.
+    // Vamos posicionar centerButtons de forma absoluta em relação ao #game-container quando landscape.
 
-    // Adiciona eventos aos botões de ação
+    // Nova abordagem:
+    // - leftArea e rightArea ficam nas laterais.
+    // - centerButtons fica posicionado absolutamente sobre o canvas em landscape, e na bottom-row em portrait.
+    // - Precisamos de um container para a bottom-row que só aparece em portrait.
+
+    // Vamos reconstruir:
+
+    // Limpa o pad
+    pad.innerHTML = '';
+
+    // Left area
+    pad.appendChild(leftArea);
+
+    // Center buttons (serão reposicionados via CSS)
+    const centerBtns = document.createElement('div');
+    centerBtns.className = 'center-buttons';
+    centerBtns.appendChild(btnStart.cloneNode(true)); // clonar para evitar duplicidade de eventos? Melhor criar novos elementos.
+    // Melhor criar novamente:
+    const btnStart2 = document.createElement('div');
+    btnStart2.className = 'center-btn';
+    btnStart2.textContent = 'START';
+    btnStart2.setAttribute('data-action', 'start');
+    const btnSelect2 = document.createElement('div');
+    btnSelect2.className = 'center-btn';
+    btnSelect2.textContent = 'SELECT';
+    btnSelect2.setAttribute('data-action', 'menu');
+    const btnPause2 = document.createElement('div');
+    btnPause2.className = 'center-btn';
+    btnPause2.textContent = 'PAUSE';
+    btnPause2.setAttribute('data-action', 'pause');
+    centerBtns.appendChild(btnStart2);
+    centerBtns.appendChild(btnSelect2);
+    centerBtns.appendChild(btnPause2);
+    pad.appendChild(centerBtns);
+
+    // Right area
+    pad.appendChild(rightArea);
+
+    // Bottom row (para portrait) - conterá leftArea, centerBtns, rightArea? Mas left/right já estão lá.
+    // Em portrait, queremos que left, center, right fiquem na mesma linha abaixo do canvas.
+    // Então em portrait, leftArea e rightArea devem estar lado a lado com centerBtns no meio.
+    // Vamos criar um container .portrait-row que será exibido apenas em portrait, e dentro dele colocaremos cópias ou moveremos os elementos?
+    // Como os elementos já existem, podemos usar CSS para reorganizá-los: em portrait, leftArea, centerBtns, rightArea devem ficar em linha.
+    // Para isso, em portrait, #virtual-pad deve ter display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 20px;
+    // E então leftArea, centerBtns, rightArea serão os filhos diretos. Em landscape, leftArea fica à esquerda, rightArea à direita, e centerBtns fica posicionado absolutamente sobre o canvas.
+    // Precisamos de um posicionamento absoluto para centerBtns em landscape. Vamos fazer:
+
+    // CSS adicional:
+    const extraStyle = document.createElement('style');
+    extraStyle.textContent = `
+        /* Landscape */
+        @media (orientation: landscape) {
+            #virtual-pad {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                padding: 10px;
+                box-sizing: border-box;
+                pointer-events: none;
+            }
+            #virtual-pad > .left-area, #virtual-pad > .right-area {
+                pointer-events: auto;
+            }
+            #virtual-pad > .center-buttons {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                bottom: 20px;
+                display: flex;
+                gap: 20px;
+                pointer-events: auto;
+            }
+        }
+        /* Portrait */
+        @media (orientation: portrait) {
+            #virtual-pad {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                margin-top: 10px;
+                pointer-events: auto;
+                position: relative;
+                width: 100%;
+            }
+            #virtual-pad > .center-buttons {
+                display: flex;
+                gap: 10px;
+            }
+        }
+    `;
+    document.head.appendChild(extraStyle);
+
+    // Agora adicionamos os eventos aos botões
     const actionMap = {
         'attack': playerAttack,
         'dash': playerDash,
@@ -385,26 +473,32 @@
         'menu': playerMenu,
         'pause': playerPause
     };
-    pad.querySelectorAll('[data-action]').forEach(btn => {
-        const action = btn.getAttribute('data-action');
-        const handler = (e) => {
-            e.preventDefault();
-            window.inputType.set('mobile');
-            actionMap[action]();
-        };
-        btn.addEventListener('touchstart', handler);
-        btn.addEventListener('mousedown', handler);
-    });
 
-    // Insere o pad no DOM após o game-container
+    // Função para adicionar eventos a um elemento com data-action
+    const addEvents = (el) => {
+        const action = el.getAttribute('data-action');
+        if (action && actionMap[action]) {
+            const handler = (e) => {
+                e.preventDefault();
+                window.inputType.set('mobile');
+                actionMap[action]();
+            };
+            el.addEventListener('touchstart', handler);
+            el.addEventListener('mousedown', handler);
+        }
+    };
+
+    // Seleciona todos os botões com data-action
+    pad.querySelectorAll('[data-action]').forEach(addEvents);
+
+    // Insere o pad no DOM
     const gameContainer = document.getElementById('game-container');
     if (gameContainer) {
         gameContainer.parentNode.insertBefore(pad, gameContainer.nextSibling);
     } else {
-        // Fallback: insere no body
         document.body.appendChild(pad);
     }
 
-    // Expõe o pad para referência (opcional)
-    window.virtualPad = pad;
+    // Ajuste para que o pad não bloqueie cliques no canvas em landscape
+    // O pointer-events: none no container e auto nos filhos já resolve.
 })();
