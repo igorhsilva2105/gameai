@@ -1,5 +1,5 @@
-// Module: Virtual Pad (Glassmorphism + Responsivo)
-// Versão final com ajustes de opacidade e dimensionamento.
+// Module: Virtual Pad (Design aprimorado - inspirado no anexo)
+// Glassmorphism refinado, botões mais elegantes, elementos decorativos.
 
 (function() {
     // Remove qualquer pad antigo
@@ -18,15 +18,15 @@
             box-sizing: border-box;
         }
 
-        /* Efeito glass com opacidade um pouco maior para ficar visível */
+        /* Efeito glass refinado (mais suave) */
         .glass {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             color: rgba(255, 255, 255, 0.9);
-            transition: all 0.1s ease;
+            transition: all 0.15s ease;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -36,54 +36,53 @@
 
         .glass:active {
             transform: scale(0.92);
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
         }
 
-        /* D-Pad */
+        /* D-Pad - estilo mais quadrado e elegante */
         .dpad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
             gap: 6px;
-            width: 140px;
-            height: 140px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 20px;
-            padding: 8px;
-            backdrop-filter: blur(4px);
+            width: 160px;
+            height: 160px;
+            background: transparent;
         }
         .dpad-cell {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 4px 0 #1a1a1a;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
             color: #ffd966;
-            font-size: 28px;
+            font-size: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.05s;
+            transition: all 0.1s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
         .dpad-cell:active {
-            transform: translateY(4px);
-            box-shadow: inset 0 -1px 0 #0a0a0a, 0 2px 0 #1a1a1a;
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
         }
         .dpad-cell.empty {
             background: transparent;
+            border: none;
             box-shadow: none;
             pointer-events: none;
         }
 
-        /* Botões de ação */
+        /* Botões de ação (redondos, estilo PlayStation) */
         .action-buttons {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 40px;
-            padding: 20px 15px;
-            backdrop-filter: blur(4px);
+            gap: 15px;
+            background: transparent;
         }
         .action-row {
             display: flex;
@@ -91,49 +90,91 @@
             justify-content: center;
         }
         .action-btn {
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 6px 0 #111, 0 8px 12px rgba(0,0,0,0.6);
-            font-size: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            font-size: 28px;
             font-family: 'Arial Black', sans-serif;
             color: white;
-            transition: all 0.05s;
+            transition: all 0.1s;
         }
         .action-btn:active {
-            transform: translateY(6px);
-            box-shadow: 0 2px 0 #111, 0 4px 8px rgba(0,0,0,0.6);
+            transform: scale(0.85);
             background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
         }
-        .action-btn.a { background: rgba(46, 204, 113, 0.4); }
-        .action-btn.b { background: rgba(231, 76, 60, 0.4); }
-        .action-btn.y { background: rgba(241, 196, 15, 0.4); color: #222; }
+        .action-btn.a { background: rgba(46, 204, 113, 0.3); }
+        .action-btn.b { background: rgba(231, 76, 60, 0.3); }
+        .action-btn.y { background: rgba(241, 196, 15, 0.3); color: #222; }
 
-        /* Botões centrais */
+        /* Botões centrais (START/SELECT) */
+        .center-buttons {
+            display: flex;
+            gap: 20px;
+        }
         .center-btn {
-            width: 80px;
+            width: 90px;
             height: 50px;
             border-radius: 30px;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.1s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .center-btn:active {
             transform: scale(0.9);
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Portrait */
+        /* Elementos decorativos (touchpad e joysticks) - apenas para visual */
+        .decor-touchpad {
+            width: 200px;
+            height: 80px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 10px;
+        }
+        .decor-joystick {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        .decor-joystick::after {
+            content: '';
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Layout Portrait */
         @media (max-width: 800px) and (orientation: portrait) {
             body {
                 justify-content: flex-start !important;
@@ -144,26 +185,30 @@
                 flex-wrap: wrap;
                 justify-content: center;
                 align-items: center;
-                gap: 15px;
+                gap: 20px;
                 margin-top: 10px;
                 width: 100%;
                 max-width: 600px;
                 pointer-events: auto;
             }
-            .center-buttons {
-                display: flex;
-                gap: 15px;
+            .left-area {
+                order: 1;
+            }
+            .right-area {
                 order: 2;
+            }
+            .center-buttons {
+                order: 3;
                 width: 100%;
                 justify-content: center;
-                margin-top: 5px;
+                margin-top: 10px;
             }
-            .left-area, .right-area {
-                order: 1;
+            .decor-row {
+                display: none; /* esconde elementos decorativos no portrait para economizar espaço */
             }
         }
 
-        /* Landscape */
+        /* Layout Landscape */
         @media (max-width: 800px) and (orientation: landscape) {
             body {
                 flex-direction: row !important;
@@ -213,12 +258,25 @@
                 gap: 20px;
                 pointer-events: auto;
             }
+            .decor-row {
+                position: absolute;
+                top: 10px;
+                left: 0;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                pointer-events: none;
+                opacity: 0.5;
+            }
         }
 
+        /* Ajustes para telas muito pequenas */
         @media (max-width: 600px) {
-            .dpad { width: 120px; height: 120px; }
-            .action-btn { width: 50px; height: 50px; font-size: 20px; }
-            .center-btn { width: 70px; height: 45px; font-size: 14px; }
+            .dpad { width: 140px; height: 140px; }
+            .dpad-cell { font-size: 26px; }
+            .action-btn { width: 55px; height: 55px; font-size: 24px; }
+            .center-btn { width: 80px; height: 45px; font-size: 16px; }
         }
     `;
     document.head.appendChild(style);
@@ -226,6 +284,16 @@
     // ========== CRIAÇÃO DOS ELEMENTOS ==========
     const pad = document.createElement('div');
     pad.id = 'virtual-pad';
+
+    // Linha decorativa superior (touchpad + joysticks) - apenas visual
+    const decorRow = document.createElement('div');
+    decorRow.className = 'decor-row';
+    decorRow.innerHTML = `
+        <div class="decor-joystick"></div>
+        <div class="decor-touchpad">TOUCHPAD</div>
+        <div class="decor-joystick"></div>
+    `;
+    pad.appendChild(decorRow);
 
     // Área esquerda (D-Pad)
     const leftArea = document.createElement('div');
@@ -275,6 +343,7 @@
     const actionContainer = document.createElement('div');
     actionContainer.className = 'action-buttons';
 
+    // Linha superior: A e B
     const row1 = document.createElement('div');
     row1.className = 'action-row';
     const btnA = document.createElement('div');
@@ -288,19 +357,21 @@
     row1.appendChild(btnA);
     row1.appendChild(btnB);
 
+    // Linha inferior: Y (e talvez um espaço vazio para simetria)
     const row2 = document.createElement('div');
     row2.className = 'action-row';
     const btnY = document.createElement('div');
     btnY.className = 'action-btn y';
     btnY.textContent = 'Y';
     btnY.setAttribute('data-action', 'restart');
+    // Adiciona um espaço vazio para manter o centro? Não, deixamos só o Y
     row2.appendChild(btnY);
 
     actionContainer.appendChild(row1);
     actionContainer.appendChild(row2);
     rightArea.appendChild(actionContainer);
 
-    // Botões centrais
+    // Botões centrais (START/SELECT)
     const centerButtons = document.createElement('div');
     centerButtons.className = 'center-buttons';
 
@@ -317,6 +388,7 @@
     centerButtons.appendChild(btnStart);
     centerButtons.appendChild(btnSelect);
 
+    // Monta o pad
     pad.appendChild(leftArea);
     pad.appendChild(centerButtons);
     pad.appendChild(rightArea);
