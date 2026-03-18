@@ -1,5 +1,6 @@
 // Module: Virtual Pad (Glassmorphism + Responsivo)
 // Versão final com ajustes de layout e remoção do botão pause duplicado.
+// Corrigido: START pula tutorial durante o tutorial e pausa depois.
 
 (function() {
     // Remove qualquer pad antigo que possa existir
@@ -344,11 +345,17 @@
         'dash': playerDash,
         'restart': playerRestart,
         'start': (e) => {
-            // START: se estiver no menu, inicia; se estiver jogando, pausa/despausa
+            e.preventDefault();
+            window.inputType.set('mobile');
             if (currentState === GameState.MENU) {
-                playerStart();
+                playerStart(); // inicia o jogo
             } else if (currentState === GameState.PLAYING) {
-                playerPause();
+                // Se o tutorial estiver ativo, pula; senão, pausa
+                if (window.tutorial && window.tutorial.isActive()) {
+                    playerStart(); // isso vai pular o tutorial
+                } else {
+                    playerPause();
+                }
             } else if (currentState === GameState.PAUSED) {
                 playerPause(); // despausa
             }
